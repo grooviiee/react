@@ -1,11 +1,12 @@
 package main
 
 import (
+	"encoding/xml"
+	"fmt"
 	"io/ioutil"
-	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mholt/archiver"
 )
 
 // reference -> https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS001&apiId=2019001
@@ -15,49 +16,66 @@ const queryCorpCode string = "https://opendart.fss.or.kr/api/corpCode.xml?crtfc_
 
 //GET	https://opendart.fss.or.kr/api/list.json
 
+type Corp struct {
+	corp_code   string
+	corp_name   string
+	stock_code  string
+	modify_date string
+}
+
 func setupRouter(data string) *gin.Engine {
 	r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
-		c.String(200, data)
+		c.String(200, "pong")
 	})
 	return r
 }
 
 func main() {
 
-	resp, err := http.Get(queryCorpCode)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
+	// resp, err := http.Get(queryCorpCode)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer resp.Body.Close()
 
-	data, err := ioutil.ReadAll(resp.Body)
+	// data, err := ioutil.ReadAll(resp.Body)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// err = ioutil.WriteFile("data.zip", data, 0644)
+
+	// err = archiver.Unarchive("data.zip", "Unarchive_output")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// err = archiver.Walk("data.zip", func(f archiver.File) error {
+	// 	fmt.Println(f.Name(), f.Size())
+	// 	return nil
+	// })
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	fp, err := os.Open("Unarchive_output\\CORPCODE.xml")
 	if err != nil {
 		panic(err)
+	}
+	defer fp.Close()
+
+	// xml 파일 읽기
+	fileReadData, _ := ioutil.ReadAll(fp)
+
+	// xml 디코딩
+	var corp []Corp
+	xmlerr := xml.Unmarshal(fileReadData, &corp)
+	if xmlerr != nil {
+		panic(xmlerr)
 	}
 
-	err = ioutil.WriteFile("data.zip", data, 0644)
+	fmt.Printf("%-v", corp)
 
-	err = archiver.Unarchive("test.zip", "Unarchive_output")
-	if err != nil {
-		panic(err)
-	}
-	err = archiver.Walk("test.zip", func(f archiver.File) error {
-		fmt.Println(f.Name(), f.Size())
-		return nil
-	})
-	if err != nil {
-		panic(err)
-	}
-}
-	r := setupRouter(string(data))
+	r := setupRouter(string("ping"))
 	r.Run(":8080")
 }
-
-// package main
-
-// import "fmt"
-
-// func main() {
-// 	fmt.Print("Hello World")
-// }
