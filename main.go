@@ -4,9 +4,11 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mholt/archiver"
 )
 
 // reference -> https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS001&apiId=2019001
@@ -17,46 +19,25 @@ const queryCorpCode string = "https://opendart.fss.or.kr/api/corpCode.xml?crtfc_
 //GET	https://opendart.fss.or.kr/api/list.json
 
 type Corp struct {
-	corp_code   string
-	corp_name   string
-	stock_code  string
-	modify_date string
+	List []struct {
+		CorpCode   string `xml:"corp_code"`
+		CorpName   string `xml:"corp_name"`
+		StockCode  string `xml:"stock_code"`
+		ModifyDate string `xml:"modify_date"`
+	} `xml:"list"`
 }
 
 func setupRouter(data string) *gin.Engine {
 	r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
-		c.String(200, "pong")
+		c.String(200, data)
 	})
 	return r
 }
 
 func main() {
 
-	// resp, err := http.Get(queryCorpCode)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer resp.Body.Close()
-
-	// data, err := ioutil.ReadAll(resp.Body)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// err = ioutil.WriteFile("data.zip", data, 0644)
-
-	// err = archiver.Unarchive("data.zip", "Unarchive_output")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// err = archiver.Walk("data.zip", func(f archiver.File) error {
-	// 	fmt.Println(f.Name(), f.Size())
-	// 	return nil
-	// })
-	// if err != nil {
-	// 	panic(err)
-	// }
+	//DownloadCorpCode()
 
 	fp, err := os.Open("Unarchive_output\\CORPCODE.xml")
 	if err != nil {
@@ -73,9 +54,50 @@ func main() {
 	if xmlerr != nil {
 		panic(xmlerr)
 	}
+	//fmt.Printf("%-v", string(fileReadData))
+	OperateService(fmt.Sprintf("%v", corp))
 
-	fmt.Printf("%-v", corp)
+}
 
-	r := setupRouter(string("ping"))
-	r.Run(":8080")
+func OperateService(data string) error {
+	r := setupRouter(data)
+	r.Run(":83")
+
+	return nil
+}
+
+func DownloadCorpCode() error {
+	//Send Query
+	resp, err := http.Get(queryCorpCode)
+	if err != nil {
+		panic(err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	//Get Resp
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+		return err
+	}
+
+	// Make zip file using resp
+	err = ioutil.WriteFile("data.zip", data, 0644)
+
+	// Unzip downloaded file
+	err = archiver.Unarchive("data.zip", "Unarchive_output")
+	if err != nil {
+		panic(err)
+	}
+	err = archiver.Walk("data.zip", func(f archiver.File) error {
+		fmt.Println(f.Name(), f.Size())
+		return nil
+	})
+	if err != nil {
+		panic(err)
+		return err
+	}
+
+	return nil
 }
