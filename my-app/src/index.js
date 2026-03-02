@@ -1,17 +1,26 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import { createRoot } from 'react-dom/client';
+import LikeCounter from './components/LikeCounter'; // 👈 파일 가져오기 (확장자 .js는 생략 가능)
+import WindowWidthCounter from './components/WindowWitdhCounter';
+const items = [
+    { id: 1, name: "apple", stock: 5 },
+    { id: 2, name: "grape", stock: 3 },
+    { id: 3, name: "watermelom", stock: 0}
+]
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+    <>
+    <div>
+        {items.map((item) => (
+            <LikeCounter
+                key={item.id}
+                title={item.name}
+                initCount={item.stock}
+            />
+            ))}
+    </div>
+    <div>
+        <WindowWidthCounter />
+    </div>
+    </>
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
